@@ -6,6 +6,7 @@
 #include <iostream>
 #include "selector.hpp"
 #include "options.hpp"
+#include "../pugixml/pugixml.hpp"
 
 typedef std::array<unsigned char, 4> ProtoSize;
 
@@ -85,6 +86,101 @@ public:
 		return result;
 	}
 	
+	struct Message {
+		std::map<int, std::string> packages;
+		std::size_t _max;
+		std::size_t _sendIndex;
+		bool first = true;
+
+		void setMax(std::size_t sendIndex, std::size_t max) {
+			_max = max;
+			_sendIndex = sendIndex;
+			first = false;
+		}
+		
+		void setPackage(std::size_t package, const char* message, std::size_t size) {
+			if(package >= _max) {
+				std::cerr << "nagyobb a package, mint a max" << std::endl;
+			}
+			if(packages.count(package)) {
+				std::cerr << "ERROR same package" << package << std::endl;
+			}
+			packages[package] = std::string(message, size);
+		}
+		
+		bool checkSetMax(std::size_t sendIndex, std::size_t pmax) {
+			if(first) {
+				setMax(sendIndex, pmax);
+				return true;
+			}
+			
+			if(sendIndex != _sendIndex) {
+				std::cerr << "nem egyenlo a sendIndex" << std::endl;
+				return false;
+			}
+			if(pmax != _max) {
+				std::cerr << "nem egyenlo a max" << std::endl;
+			}
+			return pmax == _max;
+		}
+		
+		bool isDone() {
+			return _max == packages.size();
+		}
+		
+		std::string getData() {
+			std::string res;
+			for(auto& p : packages) {
+				res += std::move(p.second);
+			}
+			return res;
+		}
+	};
+	
+	bool read(pugi::xml_document& doc) {
+		Message message;
+
+
+		char reader[1012];
+		std::size_t received;
+		sf::IpAddress address;
+		unsigned short port;
+
+		do {
+			udp.receive(reinterpret_cast<void*>(reader),1012, received, address, port);
+		
+			if(received != 1012) {
+				std::cerr << "Nem eleget olvasott be!!" << std::endl;
+			}
+
+			std::int32_t sendIndex = *reinterpret_cast<std::int32_t*>(reader);
+			std::int32_t packetIndex = *reinterpret_cast<std::int32_t*>(reader + 4);
+			std::int32_t packetCount = *reinterpret_cast<std::int32_t*>(reader + 8);
+
+			if(!message.checkSetMax(sendIndex, packetCount)) {
+				std::cerr << "checkSetMax failed" << std::endl;
+			}
+			
+			message.setPackage(packetIndex, reader + 12, 1000);
+
+		} while(!message.isDone());
+		
+		std::string source = message.getData();
+		pugi::xml_parse_result result = doc.load_string(source.c_str());
+		
+		
+		if (result)
+		{
+			std::cerr << "Parse GOOD\n\n";
+		}
+		else
+		{
+			std::cerr << "BAD PARSE" << source << std::endl << std::endl;
+			std::cerr << "Error description: " << result.description() << "\n";
+			std::cerr << "Error offset: " << result.offset << " (error at [..." << *(source.data() + result.offset) << "]\n\n";
+		}
+		return result;
+	}
 	
 	
 	virtual void readable() = 0;
