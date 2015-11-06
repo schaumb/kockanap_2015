@@ -1,4 +1,4 @@
-#include "logic.hpp"
+#include "../logic/logic.hpp"
 #include "options.hpp"
 
 int main(int argc, char const* const* argv) {

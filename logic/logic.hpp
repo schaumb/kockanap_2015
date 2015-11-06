@@ -1,8 +1,8 @@
 #ifndef LOGIC_HPP
 #define LOGIC_HPP
 
-#include "connection.hpp"
-#include "options.hpp"
+#include "../server/connection.hpp"
+#include "../server/options.hpp"
 
 class Logic : Connection
 {
@@ -14,7 +14,7 @@ public:
 
 	using Selector::run;
 	virtual void preRun() override {
-	
+		
 	}
 	
 	virtual void readable() override {
