@@ -4,6 +4,7 @@
 #include <SFML/Network.hpp>
 #include <climits>
 #include <iostream>
+#include <fstream>
 #include "selector.hpp"
 #include "options.hpp"
 #include "../pugixml/pugixml.hpp"
@@ -172,7 +173,11 @@ public:
 		std::string getData() {
 			std::string res;
 			for(auto& p : packages) {
-				res += std::move(p.second);
+				std::string& str = p.second;
+				for(char& c : str) {
+					if(c == '\0') c = ' ';
+				}
+				res += str.c_str();
 			}
 			return res;
 		}
@@ -208,6 +213,7 @@ public:
 		} while(!message.isDone());
 		
 		std::string source = message.getData();
+		doc.reset();
 		pugi::xml_parse_result result = doc.load_string(source.c_str());
 		
 		
@@ -217,9 +223,10 @@ public:
 		}
 		else
 		{
-			std::cerr << "BAD PARSE" << source << std::endl << std::endl;
-			std::cerr << "Error description: " << result.description() << "\n";
-			std::cerr << "Error offset: " << result.offset << " (error at [..." << *(source.data() + result.offset) << "]\n\n";
+			std::cerr << "Error description: " << result.description() << std::endl;
+			std::cerr << "Error offset: " << result.offset << " (error at [..." << std::string(source.data() + result.offset, 20) << "] ->" << source.data() + result.offset - 300 << std::endl;
+
+ 			std::cerr << "BAD PARSE" << source << std::endl << std::endl;
 		}
 		return result;
 	}

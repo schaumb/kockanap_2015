@@ -4,6 +4,7 @@
 #include "../server/connection.hpp"
 #include "../server/options.hpp"
 #include "commands.hpp"
+#include "fields.hpp"
 
 class Logic : Connection
 {
@@ -23,6 +24,11 @@ public:
 		
 		this->read(doc);
 		
+		Fields f;
+		f.parse(doc);
+		
+		
+		this->write(f.moves());
 		static char arr[] = {'u', 'd', 'l', 'r'};
 		static int i = 0;
 		this->write({{commands.move(static_cast<Direction>(arr[++i %= 4]))}});

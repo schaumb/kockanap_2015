@@ -2,12 +2,11 @@
 #define GAMEITEM_HPP
 
 class GameItem {
-
 		pugi::xml_node info;
-
     protected:
-		std::string get( std::string str) {
-
+    
+		std::string get(const std::string& str) {
+			return info.child_value(str.c_str());
 		}
 
 		int get_int(std::string str) {
@@ -23,6 +22,8 @@ class GameItem {
 		}
 
     public:
+    	GameItem(pugi::xml_node& info) : info(info) {}
+
 		int getId() {
 			return get_int("ID");
 		}

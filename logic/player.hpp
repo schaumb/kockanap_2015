@@ -5,10 +5,9 @@
 
 class Player : public GameItem
 {
-
-
-
     public:
+    	Player(pugi::xml_node& info) : GameItem(info) {}
+
         float getWalkSpeed() {
             return get_float("WalkSpeed");
         }
@@ -57,7 +56,7 @@ class Player : public GameItem
 			return get_bool("MustStop");
 		}
 
-		string getState() {
+		std::string getState() {
             return get("State");
 		}
 
