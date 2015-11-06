@@ -6,19 +6,19 @@ read b
 while [ $a -ne $c -o $b -ne $d ]; do
 s=""
 if [ "$a" -lt "$c" ]; then
-s="${s}S"
+s="${s}E"
 a=$((a+1))
 fi
 if [ "$c" -lt "$a" ]; then
-s="${s}N"
+s="${s}W"
 a=$((a-1))
 fi
 if [ "$b" -lt "$d" ]; then
-s="${s}E"
+s="${s}S"
 b=$((b+1))
 fi
 if [ "$d" -lt "$b" ]; then
-s="${s}W"
+s="${s}N"
 b=$((b-1))
 fi
 echo "$s"
