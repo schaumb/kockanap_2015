@@ -12,4 +12,4 @@ LIBS += -l sfml-system
 LIBS += -l boost_program_options
 
 : foreach *.cpp |> !cxx |>
-: *.o |> !linker |> server
+: *.o |> !linker |> ../futtat
