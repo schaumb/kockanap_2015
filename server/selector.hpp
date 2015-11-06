@@ -12,6 +12,7 @@ public:
 	
 	void run() {
 		running = true;
+		preRun();
 		while (running) {
 			if (selector.wait(waitFor())) {
 				receive();
@@ -20,6 +21,7 @@ public:
 				timeout();
 			}
 		}
+		postRun();
 	}
 	
 	virtual ~Selector() = default;
@@ -36,6 +38,8 @@ protected:
 	}
 
 	virtual void timeout() {}
+	virtual void preRun() {}
+	virtual void postRun() {}
 	
 	virtual inline sf::Time waitFor() {
 		return sf::Time::Zero;

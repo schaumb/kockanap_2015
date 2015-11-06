@@ -31,12 +31,11 @@ uint32_t decodeSize(const T& sizeBytes) {
 }
 
 class Connection : protected virtual Selector, sf::TcpSocket {
-	
+	Options opt;
+	sf::UdpSocket udp;
+	sf::TcpSocket tcp;
 public:
-	using sf::TcpSocket::Status;
-	using sf::TcpSocket::receive;
-	using sf::TcpSocket::send;
-	Connection(const Options& options) {
+	Connection(const Options& options) : opt(options) {
 		Status status;
 		std::size_t nthTry = options.tryNToConect;
 		
@@ -47,16 +46,38 @@ public:
 				std::cerr << "Nem sikerult csatlakozni - exit" << std::endl;
 				std::exit(1);
 			}
-			status = this->connect(options.serverName, options.port, timeout);
+			status = tcp.connect(options.serverName, options.port, timeout);
 		} while(status != Done);
 
-		std::cerr << "Sikeres csatlakozas!" << std::endl;
-		this->addSocket(*this, [this]{ this->readable(); });
+		std::cerr << "Sikeres csatlakozas 1!" << std::endl;
+
+		do {
+			if(--nthTry == -1UL) {
+				std::cerr << "Nem sikerult bindolni udp - exit" << std::endl;
+				std::exit(1);
+			}
+			status = udp.bind(0);
+		} while(status != Done);
+		
+		std::cerr << "Sikeres bindolas! " << udp.getLocalPort() << std::endl;
+		this->addSocket(udp, [this]{ this->readable(); });
 	}
 	
+	~Connection() {
+		udp.unbind();
+	}
+
+	Status write(const std::vector<std::string>& messages) {
+		std::string str;
+		for(const std::string& message: messages) {
+			str += message;
+			str += "\n";
+		}
+		return write(str);
+	}
 
 	Status write(const std::string& message) {
-		Status result = this->send(reinterpret_cast<const void*>(message.data()), message.size());
+		Status result = tcp.send(reinterpret_cast<const void*>(message.data()), message.size());
 		
 		if(result != Done) {
 			std::cerr << "Nem irta ki az uzenetet" << std::endl;
@@ -64,60 +85,7 @@ public:
 		return result;
 	}
 	
-	Status writeWithSize(const std::string& message) {
-		ProtoSize sizeBytes = encodeSize(message.size());
-
-		Status result = this->send(reinterpret_cast<const void*>(sizeBytes.data()), sizeBytes.size());
-		
-		if(result != Done) {
-			std::cerr << "Nem irta ki az uzenet meretet" << std::endl;
-			return result;
-		}
-		return write(message);
-	}
 	
-	Status read(std::string& inputMessage, std::size_t maxReceive = 500, bool exactly = false) {
-		inputMessage.resize(maxReceive);
-		std::size_t received;
-		Status result = this->receive(reinterpret_cast<void*>(&inputMessage[0]), maxReceive, received);
-
-		if(received == 0) {
-			std::cerr << "Fogadott bajtok az uzenetnel: 0" << std::endl;
-		}
-
-		if(exactly && received != maxReceive) {
-			std::cerr << "nem olvasta be pontosan az uzenetet" << std::endl;
-		}
-
-		if(result != Done) {
-			std::cerr << "Nem olvasta be az uzenetet" << std::endl;
-			return result;
-		}
-
-		inputMessage.resize(maxReceive);
-		return result;
-	}
-	
-	Status readWithSize(std::string& inputMessage) {
-		ProtoSize sizeBytes;
-		std::size_t received;
-		Status result = this->receive(reinterpret_cast<void*>(&sizeBytes[0]), sizeBytes.size(), received);
-
-		if(received == 0) {
-			std::cerr << "Fogadott bajtok az uzenetnel: 0" << std::endl;
-		}
-
-		if(received != sizeBytes.size()) {
-			std::cerr << "Nem olvasta be teljesen az uzenet meretet" << std::endl;
-		}
-		
-		if(result != Done) {
-			std::cerr << "Nem sikerult a meret beolvasasa" << std::endl;
-			return result;
-		}
-
-		return read(inputMessage, received, true);
-	}
 	
 	virtual void readable() = 0;
 };
