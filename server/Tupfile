@@ -1,0 +1,15 @@
+include_rules
+
+INCLUDE_DIRS += -I ${C20XX_SFML_2_INCLUDE_DIR}
+
+LIBS += -L ${C20XX_SFML_2_LIB_DIR}
+LIBS += -l sfml-network
+LIBS += -l sfml-system
+
+LIBS += -L ${C20XX_BOOST_LIB_DIR}
+LIBS += -l sfml-network
+LIBS += -l sfml-system
+LIBS += -l boost_program_options
+
+: foreach *.cpp |> !cxx |>
+: *.o |> !linker |> server

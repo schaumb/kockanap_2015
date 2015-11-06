@@ -1,0 +1,58 @@
+.gitignore
+
+export C20XX_CXX
+export C20XX_CC
+export C20XX_GRIP
+export C20XX_TOOLS_DIR
+export C20XX_BOOST_LIB_DIR
+export C20XX_BOOST_INCLUDE_DIR
+export C20XX_GMOCK_INCLUDE_DIR
+export C20XX_GMOCK_LIB_DIR
+export C20XX_GTEST_INCLUDE_DIR
+export C20XX_SFML_1_6_INCLUDE_DIR
+export C20XX_SFML_1_6_LIB_DIR
+export C20XX_SFML_2_INCLUDE_DIR
+export C20XX_SFML_2_LIB_DIR
+export C20XX_PROTOC
+export PKG_CONFIG_PATH
+
+CXX = ${C20XX_CXX}
+CC = ${C20XX_CC}
+LD = $(CXX)
+GRIP = ${C20XX_GRIP}
+
+CPPFLAGS = -std=c++14 -Wall -Wextra -Werror -O0 -g
+LDFLAGS = `pkg-config --static --libs protobuf`
+
+BOOST_LIB_DIR = ${C20XX_BOOST_LIB_DIR}
+BOOST_INCLUDE_DIR = ${C20XX_BOOST_INCLUDE_DIR}
+BOOST_LIB_STATEMENT = -L $(BOOST_LIB_DIR)
+
+PROTOBUF_INCLUDE_DIR = `pkg-config --cflags protobuf`
+PROTOC = ${C20XX_PROTOC}
+PROTOC_FLAGS = --cpp_out=.
+
+GMOCK_INCLUDE_DIR = ${C20XX_GMOCK_INCLUDE_DIR}
+GMOCK_LIB_DIR = ${C20XX_GMOCK_LIB_DIR}
+GTEST_INCLUDE_DIR = ${C20XX_GTEST_INCLUDE_DIR}
+
+SFML_1_6_LIB_DIR = ${C20XX_SFML_1_6_LIB_DIR}
+SFML_2_LIB_DIR = ${C20XX_SFML_2_LIB_DIR}
+
+PROJECT_ROOT_DIR = $(TUP_CWD)
+PROJECT_ROOT_DIR_OLD = $(TUP_CWD)/old
+
+PROTO_UTIL_DIR = $(PROJECT_ROOT_DIR_OLD)/protoutil
+TICKSERVER_DIR = $(PROJECT_ROOT_DIR_OLD)/tickserver
+TICKSERVER_LIB = libtickserver.a
+
+!cxx = |> ^ CXX %f^ $(CXX) $(CPPFLAGS) $(INCLUDE_DIRS) -c %f -o %o |> %B.o
+!cc_and_link = |> ^ CC_AND_LINK %o^ $(CC) %f -o %o |>
+!linker = |> ^ LINK %o^ $(LD) %f $(LIBS) $(LDFLAGS) -o %o |>
+!ar = |> ^ AR %o^ ar crs %o %f |>
+!protoc = |> ^ PROTOC %f^ $(PROTOC) $(PROTOC_FLAGS) %f |> %B.pb.h %B.pb.cc
+!cp = |> ^ CP %f^ cp %f %o |> %b
+!ut = |> ^ UT^ ./%f --log_format=xml --log_level=all > %o |> result.xml
+!zip = |> ^ ZIP %o^ zip %o %f > /dev/null |>
+!doc = |> ^ HTML %o^ $(GRIP) --export %f %o |> 
+
