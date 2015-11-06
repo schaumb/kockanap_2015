@@ -1,7 +1,7 @@
 #!/bin/bash
-read c
-read d
-read a
+read -d " " c
+read -d " " d
+read -d " " a
 read b
 while [ $a -ne $c -o $b -ne $d ]; do
 s=""
