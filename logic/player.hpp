@@ -12,7 +12,7 @@ class Player : public GameItem
 			return typeId;
 		}
 
-    	Player(pugi::xml_node& info) : GameItem(info) {}
+    	Player(const pugi::xml_node& info) : GameItem(info) {}
 
 		std::string getNickName() {
 			return get("NickName");

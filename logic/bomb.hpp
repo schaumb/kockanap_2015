@@ -13,15 +13,19 @@ class Bomb : public GameItem
 			return typeId;
 		}
 
-    	Bomb(pugi::xml_node& info) : GameItem(info) {}
+    	Bomb(const pugi::xml_node& info) : GameItem(info) {}
 
         int getTimeLeft() {
 			return get_int("TimeLeft");
 		}
 
-		/*Player getOwner() {
-
-		}*/
+		Player getOwner() {
+			return get_class<Player>("Owner");
+		}
+		
+		int getRadius() {
+			return getOwner().getBombSize();
+		}
 
 };
 

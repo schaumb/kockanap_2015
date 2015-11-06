@@ -13,45 +13,46 @@ std::ostream& operator << (std::ostream& out, const Direction& dir) {
 	return out << static_cast<char>(dir);
 }
 
+
+
 struct Commands {
 	static const char we[11]; 
-	std::string login() {
+	static std::string login() {
 		static std::string password = "Vegre";
 		return std::string("/LOGIN ") + we + " " + password;
 	}
-	std::string left() {
+	static std::string left() {
 		return "/LEFT";
 	}
-	std::string right() {
+	static std::string right() {
 		return "/RIGHT";
 	}
-	std::string up() {
+	static std::string up() {
 		return "/UP";
 	}
-	std::string down() {
+	static std::string down() {
 		return "/DOWN";
 	}
-	std::string reverse() {
+	static std::string reverse() {
 		return "/REVERSE";
 	}
-	std::string stop() {
+	static std::string stop() {
 		return "/STOP";
 	}
-	std::string bomb() {
+	static std::string bomb() {
 		return "/BOMB";
 	}
-	std::string bombSize(int exp) {
+	static std::string bombSize(int exp) {
 		return "/BOMBSIZE " + std::to_string(exp);
 	}
-	std::string bombNum(int num) {
+	static std::string bombNum(int num) {
 		return "/BOMBNUM " + std::to_string(num);
 	}
-	std::string speed(double sp) {
+	static std::string speed(double sp) {
 		return "/SPEED " + std::to_string(sp);
 	}
 
-
-	std::string move(const Direction& dir) {
+	static std::string move(const Direction& dir = {}) {
 		switch(dir) {
 		case Direction::UP :
 			return up();
@@ -63,7 +64,7 @@ struct Commands {
 			return right();
 		default:
 			std::cerr << "no exist direction" << std::endl;
-			return "";
+			return stop();
 		}
 	}
 };
