@@ -48,6 +48,10 @@ public:
 				std::exit(1);
 			}
 			status = tcp.connect(options.serverName, options.port, timeout);
+			
+			if(status != Done) {
+				std::cerr << "nem sikerult " << static_cast<int>(status) << " miatt csatlakozni." << nthTry << std::endl; 
+			}
 		} while(status != Done);
 
 		std::cerr << "Sikeres csatlakozas 1!" << std::endl;
