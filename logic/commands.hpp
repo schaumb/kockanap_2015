@@ -10,14 +10,14 @@ enum class Direction : unsigned char {
 };
 
 std::ostream& operator << (std::ostream& out, const Direction& dir) {
-	return out << std::static_cast<char>(dir);
+	return out << static_cast<char>(dir);
 }
 
 struct Commands {
 
 	std::string login() {
-		static std::string userName = "";
-		static std::string password = "";
+		static std::string userName = "aludjunkRa";
+		static std::string password = "eztajelszotsohazeletbenemtalalodki";
 		return "/LOGIN " + userName + " " + password;
 	}
 	std::string left() {

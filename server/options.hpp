@@ -15,7 +15,7 @@ inline boost::program_options::options_description description(Options& options)
 	
 	options_description description("Client");
 	description.add_options()
-		("serverName,s", value<std::string>(&options.serverName)->default_value("localhost"), "Server name.")
+		("serverName,s", value<std::string>(&options.serverName)->default_value("224.5.6.7"), "Server name.")
 		("port,p", value<unsigned short>(&options.port)->default_value(6666), "Server port.")
 		("timeout,t", value<std::size_t>(&options.timeoutMillisec)->default_value(2000), "Server connection timeout.")
 		("tries,c", value<std::size_t>(&options.tryNToConect)->default_value(20), "Server connection tries.");

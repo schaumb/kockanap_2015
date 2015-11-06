@@ -74,16 +74,7 @@ public:
 			str += message;
 			str += "\n";
 		}
-		return write(str);
-	}
-
-	Status write(const std::string& message) {
-		Status result = tcp.send(reinterpret_cast<const void*>(message.data()), message.size());
-		
-		if(result != Done) {
-			std::cerr << "Nem irta ki az uzenetet" << std::endl;
-		}
-		return result;
+		return writeM(str);
 	}
 	
 	struct Message {
@@ -184,6 +175,16 @@ public:
 	
 	
 	virtual void readable() = 0;
+private:
+	Status writeM(const std::string& message) {
+		Status result = tcp.send(reinterpret_cast<const void*>(message.data()), message.size());
+		
+		if(result != Done) {
+			std::cerr << "Nem irta ki az uzenetet" << std::endl;
+		}
+		return result;
+	}
+
 };
 
 #endif // CONNECTION_HPP
