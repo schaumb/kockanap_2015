@@ -33,9 +33,14 @@ uint32_t decodeSize(const T& sizeBytes) {
 
 class Connection : protected virtual Selector, sf::TcpSocket {
 	Options opt;
-	sf::TcpSocket udp;
+	sf::UdpSocket udp;
 	sf::TcpSocket tcp;
 public:
+
+	std::string getUdpString() {
+		return sf::IpAddress::getPublicAddress().toString() + " " + std::to_string(udp.getLocalPort());
+	}
+	
 	Connection(const Options& options) : opt(options) {
 		Status status;
 		std::size_t nthTry = options.tryNToConect;
@@ -61,7 +66,7 @@ public:
 				std::cerr << "Nem sikerult csatlakozni - exit" << std::endl;
 				std::exit(1);
 			}
-			status = udp.connect("224.5.6.7", 9999, timeout);
+			status = udp.bind(options.port2);
 			
 			if(status != Done) {
 				std::cerr << "nem sikerult bindolni " << static_cast<int>(status) << " miatt csatlakozni." << nthTry << std::endl; 
@@ -75,8 +80,11 @@ public:
 	Status write(const std::vector<std::string>& messages) {
 		std::string str;
 		for(const std::string& message: messages) {
+			std::cerr << "Kuldjuk:" << message << std::endl;
+			uint32_t size = message.size();
+			ProtoSize sizeBytes = encodeSize(size);
+			str += std::string(reinterpret_cast<const char*>(sizeBytes.data()), sizeBytes.size());
 			str += message;
-			str += "\n";
 		}
 		return writeM(str);
 	}
@@ -138,9 +146,10 @@ public:
 
 		char reader[1012];
 		std::size_t received;
-
+		sf::IpAddress ip;
+		unsigned short port;
 		do {
-			udp.receive(reinterpret_cast<void*>(reader),1012, received);
+			udp.receive(reinterpret_cast<void*>(reader),1012, received, ip, port);
 		
 			if(received != 1012) {
 				std::cerr << "Nem eleget olvasott be!!" << std::endl;
