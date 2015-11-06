@@ -14,11 +14,10 @@ std::ostream& operator << (std::ostream& out, const Direction& dir) {
 }
 
 struct Commands {
-
+	static const char we[11]; 
 	std::string login() {
-		static std::string userName = "aludjunkRa";
 		static std::string password = "Vegre";
-		return "/LOGIN " + userName + " " + password;
+		return std::string("/LOGIN ") + we + " " + password;
 	}
 	std::string left() {
 		return "/LEFT";
@@ -68,5 +67,7 @@ struct Commands {
 		}
 	}
 };
+
+const char Commands::we[11] = "aludjunkRa"; 
 
 #endif // COMMANDS_HPP

@@ -8,20 +8,20 @@
 #include <boost/optional.hpp>
 #include <boost/none.hpp>
 
-
-
 class Fields
 {
-	std::vector<std::shared_ptr<GameItem>> fields[20][20];
+	std::shared_ptr<GameItem> fields[20][20];
+	
 	
 public:
 	void parse(pugi::xml_document& doc) {
+	
 		for(auto& it : fields) {
-			for(auto& field : it) {
-				field.clear();
+			for(auto& item : it) {
+				item = nullptr;
 			}
 		}
-
+		
 		auto items = doc.child("GameItems");
 		auto count = items.attribute("objects").as_int();
 		std::cout << "Item count " << count << std::endl;
@@ -32,26 +32,26 @@ public:
 			
 			auto& shr = fields[player->getPosX()][player->getPosY()];
 
-			shr.push_back(player);
+			shr = player;
 		}
 		for (pugi::xml_node tool: items.children("Bomb")) {
 			auto bomb = std::make_shared<Bomb>(tool);
 			
 			auto& shr = fields[bomb->getPosX()][bomb->getPosY()];
 			
-			shr.push_back(bomb);
+			shr = bomb;
 		}
 		for (pugi::xml_node tool: items.children("GameItem")) {
 			auto item = std::make_shared<GameItem>(tool);
 			
 			auto& shr = fields[item->getPosX()][item->getPosY()];
+			
+			shr = item;
 
-			shr.push_back(item);
 		}
 		
 		for(auto& it : fields) {
-			for(auto& itemX : it) {
-				auto& item = itemX.front();
+			for(auto& item : it) {
 				if(item) {
 					char c = item->getTileChar();
 					if(item->type() == Player::typeId) {

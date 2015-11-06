@@ -24,6 +24,12 @@ class GameItem {
     public:
     	GameItem(pugi::xml_node& info) : info(info) {}
 
+    	static constexpr const int typeId = 0;
+
+		virtual int type() {
+			return typeId;
+		}
+		
 		int getId() {
 			return get_int("ID");
 		}

@@ -7,6 +7,12 @@
 class Bomb : public GameItem
 {
     public:
+    	static constexpr const int typeId = 2;
+
+		virtual int type() override {
+			return typeId;
+		}
+
     	Bomb(pugi::xml_node& info) : GameItem(info) {}
 
         int getTimeLeft() {

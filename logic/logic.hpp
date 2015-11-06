@@ -29,9 +29,6 @@ public:
 		
 		
 		this->write(f.moves());
-		static char arr[] = {'u', 'd', 'l', 'r'};
-		static int i = 0;
-		this->write({{commands.move(static_cast<Direction>(arr[++i %= 4]))}});
 	}
 };
 

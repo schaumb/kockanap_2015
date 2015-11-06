@@ -6,7 +6,17 @@
 class Player : public GameItem
 {
     public:
+    	static constexpr const int typeId = 1;
+
+		virtual int type() override {
+			return typeId;
+		}
+
     	Player(pugi::xml_node& info) : GameItem(info) {}
+
+		std::string getNickName() {
+			return get("NickName");
+		}
 
         float getWalkSpeed() {
             return get_float("WalkSpeed");
