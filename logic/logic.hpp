@@ -18,8 +18,14 @@ public:
 	}
 	
 	virtual void readable() override {
+		std::cerr << "has readable data" << std::endl;
+		pugi::xml_document doc;
+		
+		this->read(doc);
+		
+		static char arr[] = {'u', 'd', 'l', 'r'};
 		static int i = 0;
-		this->write({{commands.move(static_cast<Direction>(++i %= 4))}});
+		this->write({{commands.move(static_cast<Direction>(arr[++i %= 4]))}});
 	}
 };
 

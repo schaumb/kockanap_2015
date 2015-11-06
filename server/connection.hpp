@@ -12,21 +12,19 @@ typedef std::array<unsigned char, 4> ProtoSize;
 
 template<class T>
 ProtoSize encodeSize(T size) {
-	// instead of htonl:
-	ProtoSize sizeBytes = { { static_cast<unsigned char>((size >> 24) & 0xff),
-			static_cast<unsigned char>((size >> 16) & 0xff),
+	ProtoSize sizeBytes = { { static_cast<unsigned char>((size >> 0) & 0xff),
 			static_cast<unsigned char>((size >> 8) & 0xff),
-			static_cast<unsigned char>(size & 0xff) } };
+			static_cast<unsigned char>((size >> 16) & 0xff),
+			static_cast<unsigned char>((size >> 24) & 0xff) } };
 	return sizeBytes;
 }
 
 template<class T>
 uint32_t decodeSize(const T& sizeBytes) {
 	uint32_t size = 0;
-	// instead of ntohl:
 	for (size_t i = 0; i < sizeof(size); ++i) {
 		size <<= CHAR_BIT;
-		size |= (uint32_t) sizeBytes[i];
+		size |= (uint32_t) sizeBytes[sizeof(size) - i - 1];
 	}
 	return size;
 }
@@ -38,7 +36,7 @@ class Connection : protected virtual Selector, sf::TcpSocket {
 public:
 
 	std::string getUdpString() {
-		return sf::IpAddress::getPublicAddress().toString() + " " + std::to_string(udp.getLocalPort());
+		return sf::IpAddress::getLocalAddress().toString() + " " + std::to_string(udp.getLocalPort());
 	}
 	
 	Connection(const Options& options) : opt(options) {
@@ -59,6 +57,9 @@ public:
 			}
 		} while(status != Done);
 
+		this->addSocket(tcp, [this]{
+			this->readTcp();
+		});
 		std::cerr << "Sikeres csatlakozas 1!" << std::endl;
 
 		do {
@@ -66,10 +67,11 @@ public:
 				std::cerr << "Nem sikerult csatlakozni - exit" << std::endl;
 				std::exit(1);
 			}
-			status = udp.bind(options.port2);
+			status = udp.bind(opt.port2);
 			
 			if(status != Done) {
-				std::cerr << "nem sikerult bindolni " << static_cast<int>(status) << " miatt csatlakozni." << nthTry << std::endl; 
+				std::cerr << "nem sikerult bindolni " << static_cast<int>(status) << " miatt csatlakozni." << nthTry << std::endl;
+				++opt.port2; 
 			}
 		} while(status != Done);
 		std::cerr << "Sikeres csatlakozas 2!" << std::endl;
@@ -77,16 +79,52 @@ public:
 		this->addSocket(udp, [this]{ this->readable(); });
 	}
 
-	Status write(const std::vector<std::string>& messages) {
+	void readTcp() {
+		ProtoSize sizeBytes;
+		std::size_t readed;
+		tcp.receive(reinterpret_cast<void*>(sizeBytes.data()), sizeBytes.size(), readed);
+
+		if(sizeBytes.size() != readed) {
+			std::cerr << "tcp read not enough size" << std::endl;
+		}
+		uint32_t size = decodeSize(sizeBytes);
+		
+		std::string str;
+		str.resize(size);
+		
+		if(size > 0) {
+			tcp.receive(reinterpret_cast<void*>(&str[0]), size, readed);
+			if(size != readed) {
+				std::cerr << "tcp read not enough message" << std::endl;
+			}
+			
+		}
+		std::cerr << "Got from tcp: " << str << std::endl;
+	}
+	void write(const std::vector<std::string>& messages) {
 		std::string str;
 		for(const std::string& message: messages) {
-			std::cerr << "Kuldjuk:" << message << std::endl;
 			uint32_t size = message.size();
 			ProtoSize sizeBytes = encodeSize(size);
-			str += std::string(reinterpret_cast<const char*>(sizeBytes.data()), sizeBytes.size());
-			str += message;
+			
+			std::cerr << "Kuldjuk: \"" << message << "\" meretjelzovel: ";
+			for(std::size_t i = 0; i < sizeBytes.size(); ++i) {
+				std::cerr << (int)sizeBytes[i] << " ";
+			}
+			std::cerr << std::endl;
+			
+			Status result = tcp.send(reinterpret_cast<const void*>(sizeBytes.data()), sizeBytes.size());
+			
+			if(result != Done) {
+				std::cerr << "not sent properly size" << std::endl;
+			}
+
+			result = tcp.send(reinterpret_cast<const void*>(message.data()), message.size());
+
+			if(result != Done) {
+				std::cerr << "not sent properly message" << std::endl;
+			}
 		}
-		return writeM(str);
 	}
 	
 	struct Message {
@@ -102,7 +140,7 @@ public:
 		}
 		
 		void setPackage(std::size_t package, const char* message, std::size_t size) {
-			if(package >= _max) {
+			if(package > _max) {
 				std::cerr << "nagyobb a package, mint a max" << std::endl;
 			}
 			if(packages.count(package)) {
@@ -139,6 +177,8 @@ public:
 			return res;
 		}
 	};
+	
+	
 	
 	bool read(pugi::xml_document& doc) {
 		Message message;
@@ -186,15 +226,6 @@ public:
 	
 	
 	virtual void readable() = 0;
-private:
-	Status writeM(const std::string& message) {
-		Status result = tcp.send(reinterpret_cast<const void*>(message.data()), message.size());
-		
-		if(result != Done) {
-			std::cerr << "Nem irta ki az uzenetet" << std::endl;
-		}
-		return result;
-	}
 
 };
 

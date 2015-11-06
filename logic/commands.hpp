@@ -17,7 +17,7 @@ struct Commands {
 
 	std::string login() {
 		static std::string userName = "aludjunkRa";
-		static std::string password = "eztajelszotsohazeletbenemtalalodki";
+		static std::string password = "Vegre";
 		return "/LOGIN " + userName + " " + password;
 	}
 	std::string left() {
