@@ -5,20 +5,7 @@
 
 class Fields
 {
-	struct Bomb {
-		pugi::xml_node info;
-		std::string get( std::string str) {
-		
-		}
-		
-		int get_int(std::string str) {
-			return std::stoi(get(str));
-		}
-		
-		int getId() {
-			return get_int("ID");
-		}
-	};
+	
 public:
 	void parse(pugi::xml_document& doc) {
 		auto items = doc.child("GameItems");
@@ -33,3 +20,5 @@ public:
 };
 
 #endif // FIELDS_HPP
+
+
