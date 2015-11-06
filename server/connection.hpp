@@ -33,7 +33,7 @@ uint32_t decodeSize(const T& sizeBytes) {
 
 class Connection : protected virtual Selector, sf::TcpSocket {
 	Options opt;
-	sf::UdpSocket udp;
+	sf::TcpSocket udp;
 	sf::TcpSocket tcp;
 public:
 	Connection(const Options& options) : opt(options) {
@@ -58,18 +58,18 @@ public:
 
 		do {
 			if(--nthTry == -1UL) {
-				std::cerr << "Nem sikerult bindolni udp - exit" << std::endl;
+				std::cerr << "Nem sikerult csatlakozni - exit" << std::endl;
 				std::exit(1);
 			}
-			status = udp.bind(0);
+			status = udp.connect("224.5.6.7", 9999, timeout);
+			
+			if(status != Done) {
+				std::cerr << "nem sikerult bindolni " << static_cast<int>(status) << " miatt csatlakozni." << nthTry << std::endl; 
+			}
 		} while(status != Done);
-		
-		std::cerr << "Sikeres bindolas! " << udp.getLocalPort() << std::endl;
+		std::cerr << "Sikeres csatlakozas 2!" << std::endl;
+
 		this->addSocket(udp, [this]{ this->readable(); });
-	}
-	
-	~Connection() {
-		udp.unbind();
 	}
 
 	Status write(const std::vector<std::string>& messages) {
@@ -138,11 +138,9 @@ public:
 
 		char reader[1012];
 		std::size_t received;
-		sf::IpAddress address;
-		unsigned short port;
 
 		do {
-			udp.receive(reinterpret_cast<void*>(reader),1012, received, address, port);
+			udp.receive(reinterpret_cast<void*>(reader),1012, received);
 		
 			if(received != 1012) {
 				std::cerr << "Nem eleget olvasott be!!" << std::endl;
