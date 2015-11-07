@@ -236,7 +236,7 @@ public:
 	void slowmove(int& millisecToNext, std::vector<std::string>& res) {
 		cel += 10;
 		millisecToNext = 200;
-		res.push_back(Commands::speed(0.25));
+		res.push_back(Commands::speed(0.17));
 	}
 		
 	std::vector<std::string> moves(int& millisecToNext) {
@@ -249,7 +249,7 @@ public:
 				std::cerr << " slowmove-> stop" << std::endl;
 				result.push_back(Commands::stop());
 				cel-= 10;
-				res.push_back(Commands::speed(0.8));
+				result.push_back(Commands::speed(0.25));
 			}
 			else if(cel == 7) {
 				result.push_back(Commands::bomb());
@@ -269,7 +269,7 @@ public:
 							std::cerr << " with slow";
 						}
 						else {
-							res.push_back(Commands::speed(1.0));
+							result.push_back(Commands::speed(0.3));
 						}
 						std::cerr << std::endl;
 						result.push_back(Commands::move(dir));
@@ -365,7 +365,8 @@ public:
 					if(dangerous.count(we->getPos())) {
 						std::cerr << "We have some dangerous place. We need to think that we change the route" << std::endl;
 						
-						if(closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()))) != getDir(we->getD())) {
+						if(closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()))) != getDir(we->getD()) &&
+							closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()), 0)) != getDir(we->getD())) {
 							std::cerr << "We have to change the route to safety" << std::endl;
 							result.push_back(Commands::stop());
 						}
