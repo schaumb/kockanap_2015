@@ -136,7 +136,7 @@ public:
 			}
 		}
 		std::sort(dirs.begin(), dirs.end(), [&position](Direction d1, Direction d2) {
-			return maxThere(position, d1) > maxThere(position, d2);
+			return maxThere(position, d1) < maxThere(position, d2);
 		});
 		return dirs;
 	}

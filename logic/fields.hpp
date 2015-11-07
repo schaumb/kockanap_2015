@@ -15,7 +15,7 @@ class Fields
 {
 	std::vector<std::shared_ptr<GameItem>> fields[20][20];
 	std::set<Coordinate> solids;
-	std::set<Coordinate> dangerous;
+	std::map<Coordinate, int> dangerous;
 	std::set<Coordinate> pickable;
 	std::set<Coordinate> explodable;
 	std::shared_ptr<Player> we;
@@ -35,7 +35,7 @@ public:
 			explodable.insert(ptr->getPos());
 		}
 		if(ptr->getTileChar() == 'X' || ptr->getTileChar() == 'Y') {
-			dangerous.insert(ptr->getPos());
+			++dangerous[ptr->getPos()];
 		}
 	}
 	
@@ -50,7 +50,7 @@ public:
 				if(solids.count(ujpos)) {
 					break;
 				}
-				dangerous.insert(ujpos);
+				++dangerous[ujpos];
 			}
 		}
 	}
@@ -189,7 +189,9 @@ public:
 	
 	Direction closestPickableRoute(Coordinate from) {
 		std::set<Coordinate> notJustSolid = solids;
-		notJustSolid.insert(dangerous.begin(), dangerous.end());
+		for(auto danger : dangerous) {
+			notJustSolid.insert(danger.first);
+		}
 		for(auto coord : Moves::reachableCoords(from, notJustSolid)) {
 			if(pickable.count(std::get<1>(coord))) {
 				reach = std::get<1>(coord);
@@ -201,7 +203,9 @@ public:
 	
 	Direction closestAttack(Coordinate from) {
 		std::set<Coordinate> notJustSolid = solids;
-		notJustSolid.insert(dangerous.begin(), dangerous.end());
+		for(auto danger : dangerous) {
+			notJustSolid.insert(danger.first);
+		}
 		for(auto coord : Moves::reachableCoords(from, notJustSolid)) {
 			if(explodable.count(std::get<1>(coord))) {
 				reach = std::get<1>(coord);
@@ -213,7 +217,9 @@ public:
 	
 	bool inDangerous(Coordinate from) {
 		std::set<Coordinate> notJustSolid = solids;
-		notJustSolid.insert(dangerous.begin(), dangerous.end());
+		for(auto danger : dangerous) {
+			notJustSolid.insert(danger.first);
+		}
 		Coordinate coordx;
 		for(auto coord : Moves::reachableCoords(from, notJustSolid)) {
 			if(coordx == Coordinate{}) {
@@ -336,10 +342,8 @@ public:
 						cel = 0;
 					}
 					else if(
-						closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()), -1)) != getDir(we->getD()) ||
 						closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()), 0)) != getDir(we->getD()) ||
-						closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()))) != getDir(we->getD()) ||
-						closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()), 2)) != getDir(we->getD())) {
+						closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()))) != getDir(we->getD())) {
 						std::cerr << "We have to change the route to safety" << std::endl;
 						result.push_back(Commands::stop());
 					}
@@ -407,7 +411,8 @@ public:
 						if(getDoIt) {
 							for(auto bomb : bombs) {
 								if(bomb->getTileChar() == 'Y') {
-									if(closeTo(bomb->getPos(), we->getPos(), bomb->getRadius())) {
+									if(closeTo(bomb->getPos(), we->getPos(), bomb->getRadius()) ||
+										dangerous.count(we->getPos())) {
 										std::cerr << "NEM JO OTLET, kozelben bomba van" << std::endl;
 										getDoIt = false;
 										break;
@@ -426,7 +431,7 @@ public:
 									if(std::get<0>(std::get<1>(c)) == std::get<0>(we->getPos()) ||
 										std::get<1>(std::get<1>(c)) == std::get<1>(we->getPos())) 
 									{
-										dangerous.insert(std::get<1>(c));
+										++dangerous[std::get<1>(c)];
 									}
 								}
 								millisecToNext = 1;
