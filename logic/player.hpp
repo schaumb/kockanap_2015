@@ -2,9 +2,14 @@
 #define PLAYER_HPP
 
 #include "gameitem.hpp"
+#include <string>
 
 class Player : public GameItem
 {
+		std::string nickName;
+		int bombSize;
+		int dx;
+		int dy;
     public:
     	static constexpr const int typeId = 1;
 
@@ -12,10 +17,17 @@ class Player : public GameItem
 			return typeId;
 		}
 
-    	Player(const pugi::xml_node& info) : GameItem(info) {}
+    	Player(const pugi::xml_node& info) : GameItem(info),
+    		nickName(get("NickName")),
+	    	bombSize(get_int("BombSize")),
+	    	dx(get_int("DX")),
+	    	dy(get_int("DY"))
+    	{
+    	
+    	}
 
 		std::string getNickName() {
-			return get("NickName");
+			return nickName;
 		}
 
         float getWalkSpeed() {
@@ -27,7 +39,7 @@ class Player : public GameItem
 		}
 
 		int getBombSize() {
-			return get_int("BombSize");
+			return bombSize;
 		}
 
 		int getBombsDetonated() {
@@ -74,12 +86,16 @@ class Player : public GameItem
 			return get_int("BombsLeft");
 		}
 
-		int getDX() {
-			return get_int("DX");
+		auto getDX() {
+			return dx;
 		}
 
-		int getDY() {
-			return get_int("DY");
+		auto getDY() {
+			return dy;
+		}
+		
+		auto getD() {
+			return std::make_tuple(getDX(), getDY());
 		}
 
 		int getDied() {

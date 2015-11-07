@@ -6,6 +6,8 @@
 
 class Bomb : public GameItem
 {
+		int timeLeft;
+		Player owner;
     public:
     	static constexpr const int typeId = 2;
 
@@ -13,19 +15,21 @@ class Bomb : public GameItem
 			return typeId;
 		}
 
-    	Bomb(const pugi::xml_node& info) : GameItem(info) {}
+    	Bomb(const pugi::xml_node& info) : GameItem(info), 
+    		owner(info.child("Owner")) {
+    		timeLeft = get_int("TimeLeft");
+    	}
 
         int getTimeLeft() {
-			return get_int("TimeLeft");
+			return timeLeft;
 		}
 
 		Player getOwner() {
-			return get_class<Player>("Owner");
+			return owner;
 		}
 		
 		int getRadius() {
-			Player p = getOwner();
-			return p.getBombSize();
+			return getOwner().getBombSize();
 		}
 
 };

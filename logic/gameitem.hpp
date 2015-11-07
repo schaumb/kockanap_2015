@@ -1,8 +1,12 @@
 #ifndef GAMEITEM_HPP
 #define GAMEITEM_HPP
 
+#include <sstream>
+
 class GameItem {
-		pugi::xml_node info;
+	pugi::xml_node info;
+	int x;
+	int y;
     protected:
     
 		std::string get(const std::string& str) {
@@ -20,15 +24,12 @@ class GameItem {
 		float get_float(const std::string& str) {
             return std::stof(get(str));
 		}
-		
-		template<class T>
-		T get_class(const std::string& str) {
-			auto xx = info.child(str.c_str());
-			return T{xx};
-		}
 
     public:
-    	GameItem(const pugi::xml_node& info) : info(info) {}
+    	GameItem(const pugi::xml_node& info) : info(info),
+    		x(get_int("PosX")),
+    		y(get_int("PosY"))
+    		 {}
 
     	static constexpr const int typeId = 0;
 
@@ -61,11 +62,11 @@ class GameItem {
 		}
 
 		auto getPosX() {
-			return get_int("PosX");
+			return x;
 		}
 
 		auto getPosY() {
-			return get_int("PosY");
+			return y;
 		}
 
 		auto getPos() {

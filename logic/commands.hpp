@@ -3,45 +3,11 @@
 
 #include "moves.hpp"
 
-enum class Direction : unsigned char {
-	UP = 'u',
-	DOWN = 'd',
-	LEFT = 'l',
-	RIGHT = 'r',
-};
-
-Coordinate getNext(Coordinate coord, Direction dir, int count = 1) {
-	switch(dir) {
-	case Direction::UP:
-		count = -count;
-	case Direction::DOWN:
-		if(0 <= std::get<1>(coord) + count && std::get<1>(coord) + count < 20) {
-			std::get<1>(coord) += count;
-		}
-		break;
-	case Direction::LEFT:
-		count = -count;
-	case Direction::RIGHT:
-		if(0 <= std::get<0>(coord) + count && std::get<0>(coord) + count < 20) {
-			std::get<0>(coord) += count;
-		}
-		break;
-	default:
-		break;
-	}
-	return coord;
-}
-
-std::ostream& operator << (std::ostream& out, const Direction& dir) {
-	return out << static_cast<char>(dir);
-}
-
-
 
 struct Commands {
 	static const char we[];
 	static std::string login() {
-		static std::string password = "Vegrex";
+		static std::string password = "Vegre";
 		return std::string("/LOGIN ") + we + " " + password;
 	}
 	static std::string left() {
@@ -92,6 +58,6 @@ struct Commands {
 	}
 };
 
-const char Commands::we[] = "aludjunkRá"; 
+const char Commands::we[] = "aludjunkRa"; 
 
 #endif // COMMANDS_HPP
