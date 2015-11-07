@@ -19,9 +19,9 @@ auto& get(Container&& c, Coordinate coord) {
 
 enum class Direction : unsigned char {
 	UP = 'u',
-	DOWN = 'D',
+	DOWN = 'd',
 	LEFT = 'l',
-	RIGHT = 'R',
+	RIGHT = 'r',
 };
 
 Coordinate getNext(Coordinate coord, Direction dir, int count = 1) {
