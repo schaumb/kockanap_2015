@@ -244,10 +244,10 @@ public:
 		}
 		return true;
 	}
-	void slowmove(int& millisecToNext, std::vector<std::string>& /*res*/) {
+	void slowmove(int& millisecToNext, std::vector<std::string>& res) {
 		cel += 10;
-		millisecToNext = 200;
-		//res.push_back(Commands::speed(0.17));
+		millisecToNext = 400;
+		res.push_back(Commands::speed(0.17));
 	}
 		
 	std::vector<std::string> moves(int& millisecToNext) {
@@ -260,7 +260,7 @@ public:
 				std::cerr << " slowmove-> stop" << std::endl;
 				result.push_back(Commands::stop());
 				cel-= 10;
-				//result.push_back(Commands::speed(0.25));
+				result.push_back(Commands::speed(0.25));
 			}
 			else if(cel == 7) {
 				result.push_back(Commands::bomb());
