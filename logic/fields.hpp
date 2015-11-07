@@ -155,6 +155,7 @@ public:
 	Direction closestNotDangerRoute(Coordinate from) {
 		bool release_if_same_root = true;
 		bool release_reachables = true;
+		bool best_minimal_route = false;
 		bool first = true;
 		Direction now = getDir(we->getD());
 		Direction d = {};
@@ -176,7 +177,11 @@ public:
 				} else if (first) {
 					first = false;
 					std::tie(count, reach, d) = coord;
-				} else {
+				} 
+				else if(best_minimal_route) {
+				
+				}
+				else  {
 					if(std::get<0>(coord) <= count + 2 && std::get<2>(coord) == now) {
 						reach = std::get<1>(coord);
 						return now;

@@ -3,6 +3,8 @@
 
 #include <tuple>
 #include <iostream>
+#include <deque>
+
 
 
 using Coordinate = std::tuple<int, int>;
@@ -97,6 +99,10 @@ Direction getDir(Coordinate coord) {
 	return {};
 }
 
+Direction getVectorDir(Coordinate from, Coordinate to) {
+	return getDir(Coordinate{std::get<0>(to) - std::get<0>(from), std::get<1>(to) - std::get<1>(from)});
+}
+
 bool neigbours(Coordinate coord1, Coordinate coord2) {
 	if(coord1 == coord2) return false;
 	for(auto dir : {Direction::UP, Direction::DOWN, Direction::LEFT, Direction::RIGHT}) {
@@ -139,6 +145,50 @@ public:
 			return maxThere(position, d1) < maxThere(position, d2);
 		});
 		return dirs;
+	}
+	
+	static std::deque<Coordinate> routeTo(Coordinate from, Coordinate to, std::set<Coordinate> solids) {
+		std::map<Coordinate, Coordinate> fater;
+		
+		fater[from] = from;
+		
+		std::deque<Coordinate> coords;
+		coords.push_back(from);
+		
+		while(coords.size()) {
+			Coordinate now = coords.front();
+			coords.pop_front();
+			
+			for(auto dir : directions(now, solids)) {
+				auto nextCoord = getNext(now, dir);
+				if(!fater.count(nextCoord)) {
+					fater[nextCoord] = now;
+					if(nextCoord == to) {
+						coords.clear();
+						break;
+					}
+					else {
+						coords.push_back(nextCoord);
+					}
+				}
+			}
+		}
+		if(fater.count(to)) {
+			std::deque<Coordinate> result;
+			result.push_front(to);
+			
+			Coordinate next = fater[to];
+			
+			while(next != fater[next]) {
+				result.push_front(next);
+				next = fater[next];
+			}
+			return result;
+		}
+		else {
+			return {};
+		}
+		
 	}
 
 	static std::vector<std::tuple<int, Coordinate, Direction>> reachableCoords(Coordinate position, std::set<Coordinate> solids) {
