@@ -89,6 +89,17 @@ bool neigbours(Coordinate coord1, Coordinate coord2) {
 	return false;
 }
 
+bool closeTo(Coordinate c1, Coordinate c2, int radius = 1) {
+	if(std::get<0>(c1) == std::get<0>(c2)) {
+		return std::abs(std::get<1>(c1) - std::get<1>(c2)) <= radius;
+	}
+
+	if(std::get<1>(c1) == std::get<1>(c2)) {
+		return std::abs(std::get<0>(c1) - std::get<0>(c2)) <= radius;
+	}
+	return false;
+}
+
 std::ostream& operator << (std::ostream& out, const Direction& dir) {
 	return out << static_cast<char>(dir);
 }

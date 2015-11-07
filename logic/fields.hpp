@@ -39,6 +39,7 @@ public:
 	}
 	
 	void insertDanger(std::shared_ptr<Bomb> bptr) {
+		if(bptr->getTileChar() == 'X') return; 
 		int radius = bptr->getRadius();
 		auto pos = bptr->getPos();
 		for(auto dir : {Direction::UP, Direction::DOWN, Direction::LEFT, Direction::RIGHT}) {
@@ -140,16 +141,12 @@ public:
 		return {};
 	}
 	
-	bool isDeadEnd() {
-		if(we) {
-			auto dir = getDir(we->getD());
-			auto endx = Moves::deadEnd(getNext(we->getPos(), dir), getDir(we->getD()), solids);
-			if(endx.size()) {
-				std::cerr << getNext(we->getPos(), dir) << " to " << getDir(we->getD()) << " is deadended in " << *endx.begin() << std::endl;
-			}
-			return endx.size();
+	bool isDeadEndFromNext(Coordinate from, Direction dir) {
+		auto endx = Moves::deadEnd(getNext(from, dir), dir, solids);
+		if(endx.size()) {
+			std::cerr << getNext(we->getPos(), dir) << " to " << getDir(we->getD()) << " is deadended in " << *endx.begin() << std::endl;
 		}
-		return false;
+		return endx.size();
 	}
 	
 	Direction closestNotDangerRoute(Coordinate from) {
@@ -184,20 +181,60 @@ public:
 			}
 		}
 		return {};
-	}	
+	}
+	
+	bool inDangerous(Coordinate from) {
+		std::set<Coordinate> notJustSolid = solids;
+		notJustSolid.insert(dangerous.begin(), dangerous.end());
+		Coordinate coordx;
+		for(auto coord : Moves::reachableCoords(from, notJustSolid)) {
+			if(coordx == Coordinate{}) {
+				coordx = std::get<1>(coord);
+			}
+			else {
+				if(std::get<0>(coordx) != std::get<0>(std::get<1>(coord))) {
+					std::get<0>(coordx) = -1;
+				}
+				if(std::get<1>(coordx) != std::get<1>(std::get<1>(coord))) {
+					std::get<1>(coordx) = -1;
+				}
+				if(coordx == Coordinate{-1, -1}) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+	void slowmove(int& millisecToNext) {
+		cel += 10;
+		millisecToNext = 200;
+	}
+		
 	std::vector<std::string> moves(int& millisecToNext) {
 		std::vector<std::string> result;
+		millisecToNext = 100000;
+		
 		if(we) {
 			std::cerr << "State " << we->getState() << " ";
-			if(we->getState() == "Standing") {
+			if(cel >= 10) {
+				std::cerr << " slowmove-> stop" << std::endl;
+				result.push_back(Commands::stop());
+				cel-= 10;
+			}
+			else if(we->getState() == "Standing") {
 				std::cerr << "We are standing ";
 				if(dangerous.count(we->getPos())) {
 					auto dir = closestNotDangerRoute(we->getPos());
 
 					std::cerr << "it's dangerous " << std::endl;
 					if(dir != Direction{}) {
-						std::cerr << "so move to " << dir << std::endl;
+						std::cerr << "so move to " << dir ;
 						cel = 1;
+						if(closestNotDangerRoute(getNext(we->getPos(), dir)) != dir) {
+							slowmove(millisecToNext);
+							std::cerr << " with slow";
+						}
+						std::cerr << std::endl;
 						result.push_back(Commands::move(dir));
 					}
 					else {
@@ -208,9 +245,15 @@ public:
 				if(result.empty()){
 					std::cerr << "let's try with some pickable ";
 					auto dir = closestPickableRoute(we->getPos());
+					
 					if(dir != Direction{}) {
 						cel = 2;
-						std::cerr << "so go to " << dir << std::endl;
+						std::cerr << "so go to " << dir;
+						if(closestPickableRoute(getNext(we->getPos(), dir)) != dir) {
+							slowmove(millisecToNext);
+							std::cerr << " with slow";
+						}
+						std::cerr << std::endl;
 						result.push_back(Commands::move(dir));
 					}
 					else {
@@ -222,8 +265,13 @@ public:
 					std::cerr << "let's try with attack ";
 					auto dir = closestAttack(we->getPos());
 					if(dir != Direction{}) {
-						std::cerr << "found!! " << std::endl;;
+						std::cerr << "found!! ";
 						cel = 3;
+						if(closestAttack(getNext(we->getPos(), dir)) != dir) {
+							slowmove(millisecToNext);
+							std::cerr << " with slow";
+						}
+						std::cerr << std::endl;
 						result.push_back(Commands::move(dir));
 					}
 					else {
@@ -260,10 +308,11 @@ public:
 					}
 					break;
 				case 3:
-					if((reach == we->getPos() || neigbours(reach, we->getPos())) && we->getBombSize()) 
+					if(closeTo(reach, we->getPos(), we->getBombSize()) && we->getBombsLeft()) 
 					{
 						cel = 0;
 						result.push_back(Commands::bomb());
+						result.push_back(Commands::stop());
 					}
 					else if(closestAttack(getNext(we->getPos(), getDir(we->getD()))) != getDir(we->getD())) {
 						std::cerr << "We have to change the route to attack" << std::endl;
@@ -276,28 +325,38 @@ public:
 				default:
 					if(dangerous.count(we->getPos())) {
 						std::cerr << "We have some dangerous place. We need to think that we change the route" << std::endl;
+						
+						if(closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()))) != getDir(we->getD())) {
+							std::cerr << "We have to change the route to safety" << std::endl;
+							result.push_back(Commands::stop());
+						}
+					} 
+					else {
+						std::cerr << "We have no cel and we ar in safe place, we need to rehink what we want" << std::endl;
 						result.push_back(Commands::stop());
 					}
 				}
 			}
 			
-			if(result.empty() && we->getBombSize()) {
+			if(result.empty() && we->getBombsLeft()) {
 				std::cerr << "We dont any command. Try to put a bomb" << std::endl;
-				for(auto exp : explodable) {
-					if(we->getPos() == exp || neigbours(we->getPos(), exp)) {
-						std::cerr << "Some explodable in close" << std::endl;
-						result.push_back(Commands::bomb());	
-						break;
+				if(!inDangerous(we->getPos())) {
+					if(we && !isDeadEndFromNext(we->getPos(), getDir(we->getD()))) {				
+						for(auto exp : explodable) {
+							if(closeTo(exp, we->getPos(), we->getBombSize())) {
+								std::cerr << "Some explodable in close" << std::endl;
+								result.push_back(Commands::bomb());	
+								break;
+							}
+						}
 					}
 				}
-				cel = 0;
 			}
 			
 			if(result.empty()) {
 				std::cerr << "Nothing to do" << std::endl;
 			}
 		}
-		millisecToNext = 100000;
 		std::cout << we << " Result size " << result.size() << std::endl;
 		return result;
 	}
