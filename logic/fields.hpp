@@ -14,30 +14,31 @@
 class Fields
 {
 	std::vector<std::shared_ptr<GameItem>> fields[20][20];
+	int howDanger[20][20];
 	std::vector<std::shared_ptr<GameItem>> otherItems;
 	std::vector<std::shared_ptr<Bomb>> bombs;
 	std::vector<std::shared_ptr<Player>> players;
-	Coordinate ourCoord;
+	std::shared_ptr<Player> we;
 public:
+
 	void parse(pugi::xml_document& doc) {
 		for(auto& it : fields) {
 			for(auto& field : it) {
 				field.clear();
 			}
 		}
+		we = nullptr;
 		otherItems.clear();
 		bombs.clear();
 		players.clear();
 
 		auto items = doc.child("GameItems");
-		auto count = items.attribute("objects").as_int();
-		std::cout << "Item count " << count << std::endl;
 
 		for (pugi::xml_node tool: items.children("Player")) {
 			
 			auto player = std::make_shared<Player>(tool);
 			
-			auto& shr = fields[player->getPosX()][player->getPosY()];
+			auto& shr = get(fields, player->getPos());
 
 			shr.push_back(player);
 			players.push_back(player);
@@ -45,14 +46,14 @@ public:
 		for (pugi::xml_node tool: items.children("Bomb")) {
 			auto bomb = std::make_shared<Bomb>(tool);
 			
-			auto& shr = fields[bomb->getPosX()][bomb->getPosY()];
+			auto& shr = get(fields, bomb->getPos());
 			shr.push_back(bomb);
 			bombs.push_back(bomb);
 		}
 		for (pugi::xml_node tool: items.children("GameItem")) {
 			auto item = std::make_shared<GameItem>(tool);
 			
-			auto& shr = fields[item->getPosX()][item->getPosY()];
+			auto& shr = get(fields, item->getPos());
 
 			shr.push_back(item);
 			otherItems.push_back(item);
@@ -60,13 +61,14 @@ public:
 		
 		for(auto& it : fields) {
 			for(auto& itemX : it) {
-				auto& item = itemX.front();
+				if(itemX.empty()) break;
+				auto item = itemX.front();
 				if(item) {
 					char c = item->getTileChar();
 					if(item->type() == Player::typeId) {
 						if(dynamic_cast<Player*>(item.get())->getNickName() == Commands::we) {
 							std::cout << '*';
-							ourCoord = item->getPos();
+							we = std::dynamic_pointer_cast<Player>(item);
 							continue;
 						}
 					}
@@ -79,14 +81,62 @@ public:
 			std::cout << std::endl;
 		}
 	}
+
+	void setDangerZones() {
+		for(auto bombptr : bombs) {
+			int radius = bombptr->getRadius();
+			auto coord = bombptr->getPos();
+			for(int i = -radius; i < radius; ++i) {
+				auto ncoord = getNext(coord, Direction::DOWN, i);
+				get(howDanger, ncoord) += 10 - bombptr->getTimeLeft();
+				
+				ncoord = getNext(coord, Direction::RIGHT, i);
+				get(howDanger, ncoord) += 10 - bombptr->getTimeLeft();
+			}
+		}
+	}
+	std::set<Direction> directions() {
+		std::set<Direction> dirs;
+		if(we) {
+			auto wePos = we->getPos();
+			for(auto dir : {Direction::UP, Direction::DOWN, Direction::LEFT, Direction::RIGHT}) {
+				auto npos = getNext(wePos, dir);
+				bool hasNotSolid = false;
+				for(auto ptr : get(fields, npos)) {
+					if(!ptr->getIsSolid()) {
+						hasNotSolid = true;
+						break;
+					}
+				}
+				if(!hasNotSolid) {
+					dirs.insert(dir);
+				}
+			}
+		}
+		return dirs;
+	}
 	
-	std::vector<std::string> moves() {
-		std::set<Coordinate> dangerousZone;
+	std::vector<std::string> moves(int& millisecToNext) {
+		std::vector<std::string> result;
+
+		setDangerZones();
 		
-		static char arr[] = {'u', ' ', 'd', ' ', 'l', ' ', 'r', ' '};
-		static int i = 0;
-		
-		return {Commands::move(static_cast<Direction>(arr[++i %= 8])), Commands::speed(0.5)};
+		if(we) {
+			//auto wePos = we->getPos();
+			if(we->getState() == "Standing") {
+				auto dirs = directions();
+				if(dirs.size()) {
+					std::cerr << dirs.size() << " " << *dirs.begin() << std::endl;
+					result.push_back(Commands::move(*dirs.begin()));
+				}
+			}
+			else {
+				result.push_back(Commands::stop());
+			}
+		}
+		std::cout << we << "RESULT SIZE" << result.size() << std::endl;
+		millisecToNext = 500;
+		return result;
 	}
 };
 

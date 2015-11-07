@@ -9,8 +9,8 @@ class GameItem {
 			return info.child_value(str.c_str());
 		}
 
-		int get_int(const std::string& str) {
-			return std::stoi(get(str));
+		double get_int(const std::string& str) {
+			return atoi(get(str).c_str());
 		}
 
 		bool get_bool(const std::string& str) {
@@ -23,7 +23,8 @@ class GameItem {
 		
 		template<class T>
 		T get_class(const std::string& str) {
-			return T{info.child(str.c_str())};
+			auto xx = info.child(str.c_str());
+			return T{xx};
 		}
 
     public:
@@ -59,11 +60,11 @@ class GameItem {
 			return get_bool("IsSolid");
 		}
 
-		int getPosX() {
+		auto getPosX() {
 			return get_int("PosX");
 		}
 
-		int getPosY() {
+		auto getPosY() {
 			return get_int("PosY");
 		}
 

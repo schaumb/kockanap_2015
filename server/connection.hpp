@@ -138,6 +138,7 @@ public:
 			_max = max;
 			_sendIndex = sendIndex;
 			first = false;
+			std::cerr << "Packet sendindex: " << _sendIndex << std::endl;
 		}
 		
 		void setPackage(std::size_t package, const char* message, std::size_t size) {
@@ -146,6 +147,7 @@ public:
 			}
 			if(packages.count(package)) {
 				std::cerr << "ERROR same package" << package << std::endl;
+				
 			}
 			packages[package] = std::string(message, size);
 		}
@@ -158,6 +160,8 @@ public:
 			
 			if(sendIndex != _sendIndex) {
 				std::cerr << "nem egyenlo a sendIndex" << std::endl;
+				first = true;
+				packages.clear();
 				return false;
 			}
 			if(pmax != _max) {
@@ -206,6 +210,7 @@ public:
 
 			if(!message.checkSetMax(sendIndex, packetCount)) {
 				std::cerr << "checkSetMax failed" << std::endl;
+				message.checkSetMax(sendIndex, packetCount);
 			}
 			
 			message.setPackage(packetIndex, reader + 12, 1000);
@@ -217,11 +222,7 @@ public:
 		pugi::xml_parse_result result = doc.load_string(source.c_str());
 		
 		
-		if (result)
-		{
-			std::cerr << "Parse GOOD\n\n";
-		}
-		else
+		if (!result)
 		{
 			std::cerr << "Error description: " << result.description() << std::endl;
 			std::cerr << "Error offset: " << result.offset << " (error at [..." << std::string(source.data() + result.offset, 20) << "] ->" << source.data() + result.offset - 300 << std::endl;

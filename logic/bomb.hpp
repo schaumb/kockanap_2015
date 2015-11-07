@@ -24,7 +24,8 @@ class Bomb : public GameItem
 		}
 		
 		int getRadius() {
-			return getOwner().getBombSize();
+			Player p = getOwner();
+			return p.getBombSize();
 		}
 
 };

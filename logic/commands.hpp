@@ -1,6 +1,7 @@
 #ifndef COMMANDS_HPP
 #define COMMANDS_HPP
 
+#include "moves.hpp"
 
 enum class Direction : unsigned char {
 	UP = 'u',
@@ -9,6 +10,28 @@ enum class Direction : unsigned char {
 	RIGHT = 'r',
 };
 
+Coordinate getNext(Coordinate coord, Direction dir, int count = 1) {
+	switch(dir) {
+	case Direction::UP:
+		count = -count;
+	case Direction::DOWN:
+		if(0 <= std::get<1>(coord) + count && std::get<1>(coord) + count < 20) {
+			std::get<1>(coord) += count;
+		}
+		break;
+	case Direction::LEFT:
+		count = -count;
+	case Direction::RIGHT:
+		if(0 <= std::get<0>(coord) + count && std::get<0>(coord) + count < 20) {
+			std::get<0>(coord) += count;
+		}
+		break;
+	default:
+		break;
+	}
+	return coord;
+}
+
 std::ostream& operator << (std::ostream& out, const Direction& dir) {
 	return out << static_cast<char>(dir);
 }
@@ -16,9 +39,9 @@ std::ostream& operator << (std::ostream& out, const Direction& dir) {
 
 
 struct Commands {
-	static const char we[11]; 
+	static const char we[];
 	static std::string login() {
-		static std::string password = "Vegre";
+		static std::string password = "Vegrex";
 		return std::string("/LOGIN ") + we + " " + password;
 	}
 	static std::string left() {
@@ -69,6 +92,6 @@ struct Commands {
 	}
 };
 
-const char Commands::we[11] = "aludjunkRa"; 
+const char Commands::we[] = "aludjunkRá"; 
 
 #endif // COMMANDS_HPP

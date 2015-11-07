@@ -9,6 +9,9 @@
 class Logic : Connection
 {
 	Commands commands;
+	Fields f;
+	int millisecToNext = 300;
+	pugi::xml_document doc;
 public:
 	Logic(const Options& options) : Connection(options) {
 	}
@@ -18,17 +21,20 @@ public:
 		this->write({{commands.login() + " " + getUdpString() }});
 	}
 	
+	virtual inline sf::Time waitFor() override {
+		return sf::milliseconds(millisecToNext);
+	}
+	virtual void timeout() {
+		this->write(f.moves(millisecToNext));
+	}
+	
 	virtual void readable() override {
-		std::cerr << "has readable data" << std::endl;
-		pugi::xml_document doc;
+		doc.reset();
 		
 		this->read(doc);
 		
-		Fields f;
 		f.parse(doc);
-		
-		
-		this->write(f.moves());
+		timeout();
 	}
 };
 
