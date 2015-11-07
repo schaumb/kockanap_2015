@@ -233,10 +233,10 @@ public:
 		}
 		return true;
 	}
-	void slowmove(int& millisecToNext, std::vector<std::string>& res) {
+	void slowmove(int& millisecToNext, std::vector<std::string>& /*res*/) {
 		cel += 10;
 		millisecToNext = 200;
-		res.push_back(Commands::speed(0.17));
+		//res.push_back(Commands::speed(0.17));
 	}
 		
 	std::vector<std::string> moves(int& millisecToNext) {
@@ -249,7 +249,7 @@ public:
 				std::cerr << " slowmove-> stop" << std::endl;
 				result.push_back(Commands::stop());
 				cel-= 10;
-				result.push_back(Commands::speed(0.25));
+				//result.push_back(Commands::speed(0.25));
 			}
 			else if(cel == 7) {
 				result.push_back(Commands::bomb());
@@ -269,7 +269,7 @@ public:
 							std::cerr << " with slow";
 						}
 						else {
-							result.push_back(Commands::speed(0.3));
+							//result.push_back(Commands::speed(0.3));
 						}
 						std::cerr << std::endl;
 						result.push_back(Commands::move(dir));
@@ -317,6 +317,18 @@ public:
 				}
 			}
 			else {
+				bool safety_enabled = true;
+				if(safety_enabled && !dangerous.count(we->getPos())) {
+					auto next = getNext(we->getPos(), getDir(we->getD()));
+					auto afternext = getNext(we->getPos(), getDir(we->getD()), 2);
+					auto afterafternext = getNext(we->getPos(), getDir(we->getD()), 3);
+					if(dangerous.count(next) || dangerous.count(afternext) || dangerous.count(afterafternext)) 
+					{
+						std::cerr << "Watch OUT" << std::endl;
+						result.push_back(Commands::stop());
+					}					
+				}
+				
 				switch(cel) {
 				case 1:
 					if(!dangerous.count(we->getPos())) {
@@ -326,7 +338,8 @@ public:
 					else if(
 						closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()), -1)) != getDir(we->getD()) ||
 						closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()), 0)) != getDir(we->getD()) ||
-						closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()))) != getDir(we->getD())) {
+						closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()))) != getDir(we->getD()) ||
+						closestNotDangerRoute(getNext(we->getPos(), getDir(we->getD()), 2)) != getDir(we->getD())) {
 						std::cerr << "We have to change the route to safety" << std::endl;
 						result.push_back(Commands::stop());
 					}
@@ -381,12 +394,42 @@ public:
 			if(result.empty() && we->getBombsLeft()) {
 				std::cerr << "We dont any command. Try to put a bomb" << std::endl;
 				if(!inDangerous(we->getPos())) {
-					if(!isDeadEndFromNext(we->getPos(), getDir(we->getD()))) {	
+					if(!isDeadEndFromNext(we->getPos(), getDir(we->getD()))) {
+						bool getDoIt = false;	
 						for(auto exp : explodable) {
 							if(closeTo(exp, we->getPos(), we->getBombSize())) {
 								std::cerr << "Some explodable in close" << std::endl;
-								result.push_back(Commands::bomb());	
+								getDoIt = true;
 								break;
+							}
+						}
+						
+						if(getDoIt) {
+							for(auto bomb : bombs) {
+								if(bomb->getTileChar() == 'Y') {
+									if(closeTo(bomb->getPos(), we->getPos(), bomb->getRadius())) {
+										std::cerr << "NEM JO OTLET, kozelben bomba van" << std::endl;
+										getDoIt = false;
+										break;
+									}
+								}
+							}
+						}
+						
+						if(getDoIt) {
+							result.push_back(Commands::bomb());
+							if(we->getState() == "Standing") {
+								for(auto c : Moves::reachableCoords(we->getPos(), solids)) {
+									if(std::get<0>(c) > we->getBombSize()) {
+										break;
+									}
+									if(std::get<0>(std::get<1>(c)) == std::get<0>(we->getPos()) ||
+										std::get<1>(std::get<1>(c)) == std::get<1>(we->getPos())) 
+									{
+										dangerous.insert(std::get<1>(c));
+									}
+								}
+								millisecToNext = 1;
 							}
 						}
 					}
