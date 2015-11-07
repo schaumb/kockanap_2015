@@ -79,6 +79,16 @@ Direction getDir(Coordinate coord) {
 	return {};
 }
 
+bool neigbours(Coordinate coord1, Coordinate coord2) {
+	if(coord1 == coord2) return false;
+	for(auto dir : {Direction::UP, Direction::DOWN, Direction::LEFT, Direction::RIGHT}) {
+		if(getNext(coord1, dir) == coord2) {
+			return true;	
+		}
+	}
+	return false;
+}
+
 std::ostream& operator << (std::ostream& out, const Direction& dir) {
 	return out << static_cast<char>(dir);
 }
@@ -86,53 +96,74 @@ std::ostream& operator << (std::ostream& out, const Direction& dir) {
 class Moves {
 	
 public:
-	template<class Fields>
-	static std::set<Direction> directions(Fields&& fields, Coordinate position, std::set<char> skip = {'W', 'V', 'X', 'Y'}) {
+	
+	static std::set<Direction> directions(Coordinate position, std::set<Coordinate> solids) {
 		std::set<Direction> dirs;
 		for(auto dir : {Direction::UP, Direction::DOWN, Direction::LEFT, Direction::RIGHT}) {
 			auto npos = getNext(position, dir);
 
-			bool hasSkipped = false;
-			for(auto ptr : get(fields, npos)) {
-				if(skip.count(ptr->getTileChar())) {
-					hasSkipped = true;
-					break;
-				}
-			}
-			if(!hasSkipped) {
+			if(!solids.count(npos)) {
 				dirs.insert(dir);
 			}
 		}
 		return dirs;
 	}
+
+	static std::vector<std::tuple<int, Coordinate, Direction>> reachableCoords(Coordinate position, std::set<Coordinate> solids) {
+		std::set<Coordinate> used;
+		std::vector<std::tuple<int, Coordinate, Direction>> elems;
+		elems.reserve(300);
+
+		used.insert(position);
+
+		for(auto dir : directions(position, solids)) {
+			auto next = getNext(position, dir);
+			used.insert(next);
+			elems.emplace_back(1, next, dir);
+		}
+
+		std::size_t where = 0;
+		while(where != elems.size()) {
+			for(auto dir : directions(std::get<1>(elems[where]), solids)) {
+				auto next = getNext(std::get<1>(elems[where]), dir);
+				if(!used.count(next)) {
+					used.insert(next);
+					elems.emplace_back(std::get<0>(elems[where]) + 1, next, std::get<2>(elems[where]));
+				}
+			}
+			++where;
+		}
+		
+		return elems;
+	}
 	
-	template<class Fields>
-	static bool deadEnd(Fields&& fields, Coordinate from, Direction to, std::set<char> skip = {'W', 'V', 'X', 'Y'}) {
-		if(directions(fields, from, skip).count(to)) {
+	static std::set<Coordinate> deadEnd(Coordinate from, Direction to, std::set<Coordinate> solids) {
+		std::set<Coordinate> result;
+		if(directions(from, solids).count(to)) {
 			Direction dir = to;
 			Coordinate next = getNext(from, to);
-			auto nextDirs = directions(fields, next);
-			std::cerr << "Deadend?" << from << " " << to << " " << nextDirs.size() << std::endl;
+			auto nextDirs = directions(next, solids);
+
 			switch(nextDirs.size()) {
-			case 1: 
-				return true;
+			case 1:
+				return {from};
 			case 4:
 			case 3:
-				return false;
+				return {};
 			case 2:
 				if(nextDirs.count(to)) {
-					return deadEnd(fields, next, to, skip);
+					return deadEnd(next, to, solids);
 				}
 				else {
 					for(auto dirx : nextDirs) {
 						if(!isSymmetric(dir, dirx)) {
-							return deadEnd(fields, next, dirx, skip);
+							return deadEnd(next, dirx, solids);
 						}
 					}
 				}
 			}
 		}
-		return false;
+		return {from};
 	}
 };
 
