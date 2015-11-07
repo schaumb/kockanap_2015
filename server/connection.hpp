@@ -87,7 +87,10 @@ public:
 
 		if(sizeBytes.size() != readed) {
 			std::cerr << "tcp read not enough size" << std::endl;
+			//running = false;
+			return;
 		}
+		
 		uint32_t size = decodeSize(sizeBytes);
 		
 		std::string str;
@@ -97,6 +100,8 @@ public:
 			tcp.receive(reinterpret_cast<void*>(&str[0]), size, readed);
 			if(size != readed) {
 				std::cerr << "tcp read not enough message" << std::endl;
+				//running = false;
+				return;
 			}
 			
 		}

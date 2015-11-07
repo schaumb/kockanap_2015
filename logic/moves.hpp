@@ -19,9 +19,9 @@ auto& get(Container&& c, Coordinate coord) {
 
 enum class Direction : unsigned char {
 	UP = 'u',
-	DOWN = 'd',
+	DOWN = 'D',
 	LEFT = 'l',
-	RIGHT = 'r',
+	RIGHT = 'R',
 };
 
 Coordinate getNext(Coordinate coord, Direction dir, int count = 1) {
@@ -44,6 +44,24 @@ Coordinate getNext(Coordinate coord, Direction dir, int count = 1) {
 		break;
 	}
 	return coord;
+}
+
+int maxThere(Coordinate c, Direction d) {
+	switch(d) {
+	case Direction::UP:
+		return std::get<1>(c);
+		break;
+	case Direction::LEFT:
+		return std::get<0>(c);
+		break;
+	case Direction::RIGHT:
+		return 19 - std::get<0>(c);
+		break;
+	case Direction::DOWN:
+		return 19 - std::get<1>(c);
+		break;
+	}
+	return 100;
 }
 
 bool isSymmetric(Direction dir1, Direction dir2) {
@@ -108,15 +126,18 @@ class Moves {
 	
 public:
 	
-	static std::set<Direction> directions(Coordinate position, std::set<Coordinate> solids) {
-		std::set<Direction> dirs;
+	static auto directions(Coordinate position, std::set<Coordinate> solids) {
+		std::vector<Direction> dirs;
 		for(auto dir : {Direction::UP, Direction::DOWN, Direction::LEFT, Direction::RIGHT}) {
 			auto npos = getNext(position, dir);
 
 			if(!solids.count(npos)) {
-				dirs.insert(dir);
+				dirs.push_back(dir);
 			}
 		}
+		std::sort(dirs.begin(), dirs.end(), [&position](Direction d1, Direction d2) {
+			return maxThere(position, d1) > maxThere(position, d2);
+		});
 		return dirs;
 	}
 
@@ -149,8 +170,8 @@ public:
 	}
 	
 	static std::set<Coordinate> deadEnd(Coordinate from, Direction to, std::set<Coordinate> solids) {
-		std::set<Coordinate> result;
-		if(directions(from, solids).count(to)) {
+		auto dirs = directions(from, solids);
+		if(std::count(dirs.begin(), dirs.end(), to)) {
 			Direction dir = to;
 			Coordinate next = getNext(from, to);
 			auto nextDirs = directions(next, solids);
@@ -162,7 +183,7 @@ public:
 			case 3:
 				return {};
 			case 2:
-				if(nextDirs.count(to)) {
+				if(std::count(nextDirs.begin(), nextDirs.end(), to)) {
 					return deadEnd(next, to, solids);
 				}
 				else {

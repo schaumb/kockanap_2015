@@ -5,7 +5,7 @@
 
 
 struct Commands {
-	static const char we[];
+	static std::string we;
 	static std::string login() {
 		static std::string password = "Vegre";
 		return std::string("/LOGIN ") + we + " " + password;
@@ -58,6 +58,6 @@ struct Commands {
 	}
 };
 
-const char Commands::we[] = "aludjunkRa"; 
+std::string Commands::we = "aludjunkRa"; 
 
 #endif // COMMANDS_HPP

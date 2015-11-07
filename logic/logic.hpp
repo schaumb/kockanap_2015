@@ -14,11 +14,13 @@ class Logic : Connection
 	pugi::xml_document doc;
 public:
 	Logic(const Options& options) : Connection(options) {
+		Commands::we += "_" + std::to_string(options.randIndex);
 	}
 
 	using Selector::run;
 	virtual void preRun() override {
-		this->write({{commands.login() + " " + getUdpString() }});
+		Fields::login = commands.login() + " " + getUdpString();
+		this->write({{ Fields::login }});
 	}
 	
 	virtual inline sf::Time waitFor() override {

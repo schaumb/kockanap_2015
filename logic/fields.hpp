@@ -23,6 +23,7 @@ class Fields
 	Coordinate reach = {};
 	int cel = 0;
 public:
+	static std::string login;
 	void insertStuffs(std::shared_ptr<GameItem> ptr) {
 		if(ptr->getIsSolid()) {
 			solids.insert(ptr->getPos());
@@ -76,6 +77,9 @@ public:
 			if(player->getNickName() != Commands::we) {
 				insertStuffs(player);
 			}
+			else {
+				we = player;
+			}
 			auto& shr = get(fields, player->getPos());
 			shr.push_back(player);
 		}
@@ -109,7 +113,6 @@ public:
 					char c = item->getTileChar();
 					if(item->type() == Player::typeId && dynamic_cast<Player*>(item.get())->getNickName() == Commands::we) {
 						std::cout << '*';
-						we = std::dynamic_pointer_cast<Player>(item);
 					}
 					else {
 						std::cout << (c == 'Z' ? ' ' : c);
@@ -134,11 +137,11 @@ public:
 		}
 	}
 
-	std::set<Direction> directions() {
+	auto directions() {
 		if(we) {
 			return Moves::directions(we->getPos(), solids);
 		}
-		return {};
+		return decltype(Moves::directions(we->getPos(), solids)){};
 	}
 	
 	bool isDeadEndFromNext(Coordinate from, Direction dir) {
@@ -207,12 +210,12 @@ public:
 	}
 	void slowmove(int& millisecToNext) {
 		cel += 10;
-		millisecToNext = 200;
+		millisecToNext = 400;
 	}
 		
 	std::vector<std::string> moves(int& millisecToNext) {
 		std::vector<std::string> result;
-		millisecToNext = 100000;
+		millisecToNext = 3000;
 		
 		if(we) {
 			std::cerr << "State " << we->getState() << " ";
@@ -220,6 +223,10 @@ public:
 				std::cerr << " slowmove-> stop" << std::endl;
 				result.push_back(Commands::stop());
 				cel-= 10;
+			}
+			else if(cel == 7) {
+				result.push_back(Commands::bomb());
+				cel = 0;
 			}
 			else if(we->getState() == "Standing") {
 				std::cerr << "We are standing ";
@@ -263,19 +270,30 @@ public:
 
 				if(result.empty()){
 					std::cerr << "let's try with attack ";
-					auto dir = closestAttack(we->getPos());
-					if(dir != Direction{}) {
-						std::cerr << "found!! ";
-						cel = 3;
-						if(closestAttack(getNext(we->getPos(), dir)) != dir) {
-							slowmove(millisecToNext);
-							std::cerr << " with slow";
-						}
-						std::cerr << std::endl;
-						result.push_back(Commands::move(dir));
+					bool hasClose = false;
+					for(auto exp : explodable) {
+						if(!inDangerous(we->getPos()) && closeTo(exp, we->getPos(), we->getBombSize())) {
+							std::cerr << "With minimal distance." << std::endl;
+							hasClose = true;
+							result.push_back(Commands::bomb());
+							break;
+						}	
 					}
-					else {
-						std::cerr << "nowhere nothing" << std::endl;;
+					if(!hasClose) {
+						auto dir = closestAttack(we->getPos());
+						if(dir != Direction{}) {
+							std::cerr << "found!! ";
+							cel = 3;
+							if(closestAttack(getNext(we->getPos(), dir)) != dir) {
+								slowmove(millisecToNext);
+								std::cerr << " with slow";
+							}
+							std::cerr << std::endl;
+							result.push_back(Commands::move(dir));
+						}
+						else {
+							std::cerr << "nowhere nothing" << std::endl;;
+						}
 					}
 				}
 			}
@@ -310,8 +328,7 @@ public:
 				case 3:
 					if(closeTo(reach, we->getPos(), we->getBombSize()) && we->getBombsLeft()) 
 					{
-						cel = 0;
-						result.push_back(Commands::bomb());
+						cel = 7;
 						result.push_back(Commands::stop());
 					}
 					else if(closestAttack(getNext(we->getPos(), getDir(we->getD()))) != getDir(we->getD())) {
@@ -341,7 +358,7 @@ public:
 			if(result.empty() && we->getBombsLeft()) {
 				std::cerr << "We dont any command. Try to put a bomb" << std::endl;
 				if(!inDangerous(we->getPos())) {
-					if(we && !isDeadEndFromNext(we->getPos(), getDir(we->getD()))) {				
+					if(!isDeadEndFromNext(we->getPos(), getDir(we->getD()))) {	
 						for(auto exp : explodable) {
 							if(closeTo(exp, we->getPos(), we->getBombSize())) {
 								std::cerr << "Some explodable in close" << std::endl;
@@ -357,10 +374,15 @@ public:
 				std::cerr << "Nothing to do" << std::endl;
 			}
 		}
+		else {
+			result.push_back(Commands::left());
+		}
 		std::cout << we << " Result size " << result.size() << std::endl;
 		return result;
 	}
 };
+
+std::string Fields::login;
 
 #endif // FIELDS_HPP
 
